@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Share your visit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  /* ============================================================
+     EDIT THESE THREE THINGS BEFORE YOU PUBLISH THIS PAGE
+     (search for "CONFIG" further down in the <script> section)
+     1. hospitalName    -> exact name patients will recognize
+     2. googleReviewUrl -> from your Google Business Profile:
+        Profile > "Get more reviews" > "Share review form"
+     3. contactPhone / contactEmail -> shown quietly at the
+        bottom of every screen, for anyone who'd rather raise
+        a concern directly instead of posting a public review
+     ============================================================ */
+
+  :root{
+    --bg:#F4F7F3;
+    --surface:#FFFFFF;
+    --ink:#22302A;
+    --ink-soft:#5B6B63;
+    --accent:#2F5D50;
+    --accent-tint:#E4EDE7;
+    --accent-warm:#C98A3E;
+    --border:#DCE6DE;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:40px 20px 28px;
+  }
+
+  .app{ width:100%; max-width:440px; }
+
+  .langrow{
+    display:flex;
+    justify-content:flex-end;
+    gap:14px;
+    margin-bottom:22px;
+    font-size:14px;
+  }
+  .langrow button{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-family:inherit;
+    font-size:14px;
+    padding:4px 2px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+  }
+  .langrow button.active{ color:var(--ink); border-bottom-color:var(--accent-warm); font-weight:600; }
+
+  .progress{
+    height:3px;
+    background:var(--border);
+    border-radius:2px;
+    margin-bottom:28px;
+    overflow:hidden;
+    display:none;
+  }
+  .progress.show{ display:block; }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent-warm);
+    transition:width .3s ease;
+  }
+
+  .step{ display:none; }
+  .step.active{ display:block; animation:fade .25s ease; }
+  @keyframes fade{ from{opacity:0} to{opacity:1} }
+  @media (prefers-reduced-motion:reduce){ .step.active{ animation:none } }
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:560;
+    font-size:32px;
+    font-size:clamp(26px,7vw,34px);
+    line-height:1.18;
+    margin:0 0 12px;
+  }
+
+  .lede{ color:var(--ink-soft); font-size:16px; line-height:1.55; margin:0 0 28px; }
+
+  .tags{ display:flex; flex-wrap:wrap; gap:10px; margin:0 0 18px; }
+  .tag{
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    border-radius:999px;
+    padding:11px 18px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    cursor:pointer;
+    min-height:44px;
+  }
+  .tag[aria-pressed="true"]{
+    border-color:var(--accent);
+    background:var(--accent-tint);
+    color:var(--accent);
+    font-weight:600;
+  }
+
+  .other-field{ margin:4px 0 28px; }
+  .other-field label{ display:block; font-size:14px; color:var(--ink-soft); margin-bottom:8px; }
+  .other-field input{
+    width:100%;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    padding:13px 14px;
+    font-size:16px;
+    font-family:inherit;
+    background:var(--surface);
+  }
+  .other-field input:focus{ outline:none; border-color:var(--accent); }
+
+  textarea{
+    width:100%;
+    min-height:150px;
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    padding:14px;
+    font-size:16px;
+    line-height:1.55;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--surface);
+    resize:vertical;
+    margin-bottom:10px;
+  }
+  textarea:focus{ outline:none; border-color:var(--accent); }
+
+  .hint{ font-size:13px; color:var(--ink-soft); margin:0 0 24px; min-height:18px; }
+  .hint.ready{ color:var(--accent); font-weight:600; }
+
+  .btn-primary{
+    width:100%;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:16px 20px;
+    font-size:16px;
+    font-weight:600;
+    font-family:inherit;
+    min-height:52px;
+    cursor:pointer;
+  }
+  .btn-primary:disabled{ background:#B9C4BD; cursor:not-allowed; }
+  .btn-primary:active:not(:disabled){ transform:scale(0.985); }
+
+  .btn-row{ display:flex; gap:12px; margin-top:8px; }
+  .btn-row .btn-primary{ flex:1; }
+
+  .btn-secondary{
+    width:100%;
+    background:none;
+    border:1.5px solid var(--border);
+    color:var(--ink);
+    border-radius:10px;
+    padding:14px 20px;
+    font-size:15px;
+    font-family:inherit;
+    min-height:52px;
+    cursor:pointer;
+  }
+
+  .link-quiet{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    font-size:14px;
+    font-family:inherit;
+    padding:14px 0 4px;
+    cursor:pointer;
+  }
+
+  .checkmark{
+    width:56px; height:56px;
+    border-radius:50%;
+    background:var(--accent-tint);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:20px;
+  }
+
+  footer{
+    margin-top:36px;
+    text-align:center;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  footer a{ color:var(--ink-soft); }
+
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="langrow">
+    <button id="lang-en" class="active" type="button">English</button>
+    <button id="lang-hi" type="button">हिंदी</button>
+  </div>
+
+  <div class="progress" id="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Screen 1: Welcome -->
+  <section class="step active" id="step-welcome">
+    <h1 id="w-title"></h1>
+    <p class="lede" id="w-lede"></p>
+    <button class="btn-primary" id="w-start" type="button"></button>
+  </section>
+
+  <!-- Screen 2: What stood out -->
+  <section class="step" id="step-tags">
+    <h1 id="t-title"></h1>
+    <p class="lede" id="t-lede"></p>
+    <div class="tags" id="tagList"></div>
+    <div class="other-field">
+      <label id="t-otherLabel" for="otherInput"></label>
+      <input type="text" id="otherInput" maxlength="140">
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="t-back" type="button"></button>
+      <button class="btn-primary" id="t-next" type="button"></button>
+    </div>
+  </section>
+
+  <!-- Screen 3: Draft & personalize -->
+  <section class="step" id="step-draft">
+    <h1 id="d-title"></h1>
+    <p class="lede" id="d-lede"></p>
+    <textarea id="draftText" maxlength="600"></textarea>
+    <p class="hint" id="d-hint"></p>
+    <button class="btn-primary" id="d-post" type="button" disabled></button>
+    <button class="link-quiet" id="d-writeOwn" type="button"></button>
+    <button class="link-quiet" id="d-back" type="button"></button>
+  </section>
+
+  <!-- Screen 4: Done -->
+  <section class="step" id="step-done">
+    <div class="checkmark">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F5D50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h1 id="done-title"></h1>
+    <p class="lede" id="done-lede"></p>
+    <button class="btn-secondary" id="done-copyAgain" type="button"></button>
+    <button class="link-quiet" id="done-startOver" type="button"></button>
+  </section>
+
+  <footer id="contactFooter"></footer>
+
+</div>
+
+<script>
+(function(){
+
+  /* ============================================================
+     CONFIG — edit these before you publish
+     ============================================================ */
+  const CONFIG = {
+    hospitalName: "Aditi Nursing Home & Hospital",
+    googleReviewUrl: "https://g.page/r/Cd3aqPR9Sz4UEAE/review",
+    contactPhone: "+919709004631",
+    contactEmail: "contact@aditinursinghomeandhospital.com"
+  };
+
+  const EDIT_THRESHOLD = 18; // characters a patient must change/add before posting unlocks
+
+  const TAGS = [
+    { id:'doctor',     label:{en:"Doctor's care",       hi:"डॉक्टर की देखभाल"},
+                        frag:{en:"the doctor was attentive and explained things clearly", hi:"डॉक्टर ने ध्यान से देखा और सब कुछ अच्छी तरह समझाया"} },
+    { id:'nursing',    label:{en:"Nursing staff",        hi:"नर्सिंग स्टाफ"},
+                        frag:{en:"the nursing staff was caring and responsive", hi:"नर्सिंग स्टाफ का व्यवहार बहुत अच्छा और सहयोगी था"} },
+    { id:'clean',      label:{en:"Cleanliness",          hi:"साफ-सफाई"},
+                        frag:{en:"the hospital was clean and well kept", hi:"अस्पताल साफ-सुथरा था"} },
+    { id:'wait',       label:{en:"Wait time",            hi:"इंतजार का समय"},
+                        frag:{en:"I did not have to wait long", hi:"ज्यादा इंतजार नहीं करना पड़ा"} },
+    { id:'billing',    label:{en:"Billing & reception",  hi:"बिलिंग और रिसेप्शन"},
+                        frag:{en:"the billing and reception process was smooth", hi:"बिलिंग और रिसेप्शन का काम आसान था"} },
+    { id:'facilities', label:{en:"Facilities",           hi:"सुविधाएं"},
+                        frag:{en:"the facilities were good", hi:"सुविधाएं अच्छी थीं"} },
+  ];
+
+  const STRINGS = {
+    en:{
+      wTitle:"How was your visit?",
+      wLede:`Thank you for visiting ${CONFIG.hospitalName}. A quick review helps other patients find good care nearby — it takes under a minute.`,
+      wStart:"Start",
+      tTitle:"What stood out?",
+      tLede:"Pick anything that applies. This just gives you a starting point to write from.",
+      otherLabel:"Anything else? (optional)",
+      otherPlaceholder:"e.g. Dr. Sharma's follow-up call",
+      back:"Back",
+      next:"Next",
+      dTitle:"Here's a starting point",
+      dLede:"Make it your own before posting — add or change a few words so it sounds like you.",
+      nudge:"Add a few more words of your own to continue.",
+      ready:"Looks good — this sounds like you.",
+      post:"Copy and open Google",
+      writeOwn:"Write this in my own words instead",
+      doneTitle:"Almost done",
+      doneLede:"Your review is copied to your clipboard. In the Google tab that just opened, tap the review box, paste it in, and tap Post.",
+      copyAgain:"Copy the text again",
+      startOver:"Start over",
+      contact:`Have a concern about your visit? Call <a href="tel:${CONFIG.contactPhone}">${CONFIG.contactPhone}</a> or email <a href="mailto:${CONFIG.contactEmail}">${CONFIG.contactEmail}</a>.`
+    },
+    hi:{
+      wTitle:"आपकी विज़िट कैसी रही?",
+      wLede:`${CONFIG.hospitalName} में आने के लिए धन्यवाद। एक छोटा-सा रिव्यू आस-पास के अन्य मरीजों की मदद करता है — इसमें एक मिनट से भी कम समय लगेगा।`,
+      wStart:"शुरू करें",
+      tTitle:"क्या अच्छा लगा?",
+      tLede:"जो भी लागू हो उसे चुनें। यह सिर्फ लिखना शुरू करने के लिए है।",
+      otherLabel:"कुछ और बताना चाहेंगे? (वैकल्पिक)",
+      otherPlaceholder:"जैसे — डॉक्टर शर्मा का फॉलो-अप कॉल",
+      back:"वापस",
+      next:"आगे",
+      dTitle:"यह एक शुरुआत है",
+      dLede:"पोस्ट करने से पहले इसे अपने शब्दों में बदलें, ताकि यह आपकी तरफ से लगे।",
+      nudge:"आगे बढ़ने के लिए अपने कुछ और शब्द जोड़ें।",
+      ready:"बढ़िया — अब यह आपकी अपनी बात लगती है।",
+      post:"कॉपी करें और Google खोलें",
+      writeOwn:"इसके बजाय मैं अपने शब्दों में लिखूंगा/लिखूंगी",
+      doneTitle:"लगभग हो गया",
+      doneLede:"आपका रिव्यू क्लिपबोर्ड में कॉपी हो गया है। अभी खुले Google टैब में, रिव्यू बॉक्स पर टैप करें, पेस्ट करें, और Post दबाएं।",
+      copyAgain:"टेक्स्ट फिर से कॉपी करें",
+      startOver:"फिर से शुरू करें",
+      contact:`अपनी विज़िट को लेकर कोई शिकायत है? <a href="tel:${CONFIG.contactPhone}">${CONFIG.contactPhone}</a> पर कॉल करें या <a href="mailto:${CONFIG.contactEmail}">${CONFIG.contactEmail}</a> पर ईमेल करें।`
+    }
+  };
+
+  const state = { lang:'en', selectedTags:new Set(), otherNote:'', initialDraft:'', finalText:'' };
+
+  const el = id => document.getElementById(id);
+
+  function buildDraft(lang){
+    const name = CONFIG.hospitalName;
+    const frags = TAGS.filter(t => state.selectedTags.has(t.id)).map(t => t.frag[lang]);
+    let sentence;
+    if (lang === 'hi'){
+      sentence = frags.length ? `${name} में मेरा अनुभव अच्छा रहा। ${joinHi(frags)}।` : `${name} में मेरा अनुभव अच्छा रहा।`;
+    } else {
+      sentence = frags.length ? `My visit to ${name} was good. ${joinEn(frags)}.` : `I had a good experience at ${name}.`;
+    }
+    if (state.otherNote.trim()) sentence += ' ' + state.otherNote.trim();
+    return sentence;
+  }
+
+  function joinEn(frags){
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+    if (frags.length === 1) return cap(frags[0]);
+    if (frags.length === 2) return cap(frags[0]) + ' and ' + frags[1];
+    return cap(frags.slice(0,-1).join(', ')) + ', and ' + frags[frags.length-1];
+  }
+  function joinHi(frags){
+    if (frags.length === 1) return frags[0];
+    if (frags.length === 2) return frags[0] + ' और ' + frags[1];
+    return frags.slice(0,-1).join(', ') + ' और ' + frags[frags.length-1];
+  }
+
+  function levenshtein(a,b){
+    const m=a.length, n=b.length;
+    if (m===0) return n; if (n===0) return m;
+    const dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
+    for (let i=0;i<=m;i++) dp[i][0]=i;
+    for (let j=0;j<=n;j++) dp[0][j]=j;
+    for (let i=1;i<=m;i++){
+      for (let j=1;j<=n;j++){
+        dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function renderTags(){
+    const list = el('tagList');
+    list.innerHTML = '';
+    TAGS.forEach(t => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tag';
+      btn.textContent = t.label[state.lang];
+      btn.setAttribute('aria-pressed', state.selectedTags.has(t.id) ? 'true' : 'false');
+      btn.addEventListener('click', () => {
+        if (state.selectedTags.has(t.id)) state.selectedTags.delete(t.id);
+        else state.selectedTags.add(t.id);
+        btn.setAttribute('aria-pressed', state.selectedTags.has(t.id) ? 'true' : 'false');
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  function applyStrings(){
+    const s = STRINGS[state.lang];
+    document.documentElement.lang = state.lang;
+    el('w-title').textContent = s.wTitle;
+    el('w-lede').textContent = s.wLede;
+    el('w-start').textContent = s.wStart;
+    el('t-title').textContent = s.tTitle;
+    el('t-lede').textContent = s.tLede;
+    el('t-otherLabel').textContent = s.otherLabel;
+    el('otherInput').placeholder = s.otherPlaceholder;
+    el('t-back').textContent = s.back;
+    el('t-next').textContent = s.next;
+    el('d-title').textContent = s.dTitle;
+    el('d-lede').textContent = s.dLede;
+    el('d-post').textContent = s.post;
+    el('d-writeOwn').textContent = s.writeOwn;
+    el('d-back').textContent = s.back;
+    el('done-title').textContent = s.doneTitle;
+    el('done-lede').textContent = s.doneLede;
+    el('done-copyAgain').textContent = s.copyAgain;
+    el('done-startOver').textContent = s.startOver;
+    el('contactFooter').innerHTML = s.contact;
+    renderTags();
+    updateReadiness();
+  }
+
+  function setLang(lang){
+    state.lang = lang;
+    el('lang-en').classList.toggle('active', lang==='en');
+    el('lang-hi').classList.toggle('active', lang==='hi');
+    applyStrings();
+  }
+
+  function showStep(name){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    el('step-'+name).classList.add('active');
+    const prog = el('progress');
+    const fill = el('progressFill');
+    if (name === 'tags'){ prog.classList.add('show'); fill.style.width='33%'; }
+    else if (name === 'draft'){ prog.classList.add('show'); fill.style.width='66%'; }
+    else { prog.classList.remove('show'); }
+    window.scrollTo(0,0);
+  }
+
+  function updateReadiness(){
+    const s = STRINGS[state.lang];
+    const val = el('draftText').value;
+    const diff = levenshtein(val.trim(), state.initialDraft.trim());
+    const ready = diff >= EDIT_THRESHOLD && val.trim().length >= 20;
+    el('d-post').disabled = !ready;
+    const hint = el('d-hint');
+    hint.textContent = ready ? s.ready : s.nudge;
+    hint.classList.toggle('ready', ready);
+  }
+
+  function copyToClipboard(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  // --- wire up events ---
+  el('lang-en').addEventListener('click', () => setLang('en'));
+  el('lang-hi').addEventListener('click', () => setLang('hi'));
+
+  el('w-start').addEventListener('click', () => showStep('tags'));
+
+  el('t-back').addEventListener('click', () => showStep('welcome'));
+  el('otherInput').addEventListener('input', e => { state.otherNote = e.target.value; });
+  el('t-next').addEventListener('click', () => {
+    state.initialDraft = buildDraft(state.lang);
+    el('draftText').value = state.initialDraft;
+    updateReadiness();
+    showStep('draft');
+  });
+
+  el('draftText').addEventListener('input', updateReadiness);
+  el('d-back').addEventListener('click', () => showStep('tags'));
+  el('d-writeOwn').addEventListener('click', () => {
+    state.initialDraft = '';
+    el('draftText').value = '';
+    el('draftText').focus();
+    updateReadiness();
+  });
+  el('d-post').addEventListener('click', () => {
+    const text = el('draftText').value.trim();
+    state.finalText = text;
+    copyToClipboard(text);
+    window.open(CONFIG.googleReviewUrl, '_blank');
+    showStep('done');
+  });
+
+  el('done-copyAgain').addEventListener('click', () => copyToClipboard(state.finalText));
+  el('done-startOver').addEventListener('click', () => {
+    state.selectedTags.clear();
+    state.otherNote = '';
+    el('otherInput').value = '';
+    state.initialDraft = '';
+    state.finalText = '';
+    el('draftText').value = '';
+    renderTags();
+    showStep('welcome');
+  });
+
+  applyStrings();
+})();
+</script>
+</body>
+</html>
